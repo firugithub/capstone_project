@@ -1,0 +1,30 @@
+
+
+
+--create HIVE TABLE which is pointing to HBASE CARD TRANSACTION TABLE 
+
+create external table card_transactions_hive(key int, card_transactions string,card_id string,member_id string,amount decimal,postcode string,pos_id string,transaction_dt timestamp,status string)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' WITH SERDEPROPERTIES 
+("hbase.columns.mapping"=":key,card_transactions:card_transactions,card_id:card_id,member_id:member_id,amount:amount,postcode:postcode,pos_id:pos_id,transaction_dt:transaction_dt,status:status") TBLPROPERTIES ("hbase.table.name"="card_transactions");
+
+
+--- sqoop command to load data from AWS RDS to HBASE
+sqoop import 
+    --connect jdbc:mysql://upgradawsrds.cpclxrkdvwmz.us-east-1.rds.amazonaws.com/cred_financials_data
+    --username upgraduser 
+	--password upgraduser
+    --table card_member 
+    --columns "card_id,member_id,member_joining_dt,card_purchase_dt,country,city" 
+    --hbase-table card_member 
+    --column-family card_member_detail 
+    --hbase-row-key card_id -m 1
+	
+sqoop import 
+    --connect jdbc:mysql://upgradawsrds.cpclxrkdvwmz.us-east-1.rds.amazonaws.com/cred_financials_data
+    --username upgraduser
+	--password upgraduser
+    --table member_score 
+    --columns "member_id,score" 
+    --hbase-table member_score 
+    --column-family member_score_detail 
+    --hbase-row-key member_id -m 1

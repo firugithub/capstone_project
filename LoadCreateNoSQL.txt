@@ -1,0 +1,7 @@
+--Create the card_transactions table by typing
+
+create 'card_transactions' ,'card_id','member_id','amount','postcode','pos_id','transaction_dt','status'
+
+hadoop dfs -copyFromLocal card_transactions.csv /tmp
+
+hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.separator=,  -Dimporttsv.columns="HBASE_ROW_KEY,card_transactions,card_id,member_id,amount,postcode,pos_id,transaction_dt,status" card_transactions /tmp/card_transactions.csv
