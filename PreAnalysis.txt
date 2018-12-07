@@ -1,0 +1,9 @@
+Script to calculate the moving average and standard deviation of the last 10 transactions for each card_id for the data present in Hadoop and NoSQL database. If the total number of transactions for a particular card_id is less than 10, then calculate the parameters based on the total number of records available for that card_id. The script should be able to extract and feed the other relevant data (‘postcode’, ‘transaction_dt’, ‘score’, etc.) for the look-up table along with card_id and UCL. (PreAnalysis.txt)
+
+
+-- UCL 
+
+select card_id, AVG(amount)+3 * STDDEV(amount) as ucl from (
+select card_id,transaction_dt,rank() over (partition by card_id order by transaction_dt) rn from card_transactions
+where rn<=10
+) group by card_id;
