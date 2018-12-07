@@ -28,3 +28,8 @@ sqoop import
     --hbase-table member_score 
     --column-family member_score_detail 
     --hbase-row-key member_id -m 1
+	
+	
+	–incremental <mode>  
+	–check-column <column name>
+	–last value <last check column value>
