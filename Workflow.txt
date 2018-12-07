@@ -1,0 +1,6 @@
+To schedule Hive job using Oozie, you need to write a Hive-action. Your Oozie job will consist of mainly three things.
+
+workflow.xml
+job.properties
+Hive script
+--https://acadgild.com/blog/oozie-job-scheduling-in-hive
