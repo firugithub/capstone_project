@@ -1,9 +1,66 @@
 Script to calculate the moving average and standard deviation of the last 10 transactions for each card_id for the data present in Hadoop and NoSQL database. If the total number of transactions for a particular card_id is less than 10, then calculate the parameters based on the total number of records available for that card_id. The script should be able to extract and feed the other relevant data (‘postcode’, ‘transaction_dt’, ‘score’, etc.) for the look-up table along with card_id and UCL. (PreAnalysis.txt)
 
 
--- UCL 
 
-select card_id, AVG(amount)+3 * STDDEV(amount) as ucl from (
-select card_id,transaction_dt,rank() over (partition by card_id order by transaction_dt) rn from card_transactions
-where rn<=10
-) group by card_id;
+### CREATE LOOKUP TABLE in hive which implisit pointing to HBASE 
+CREATE EXTERNAL TABLE card_lookup_table_hive(
+  card_id string ,
+  ucl double,
+  postcode string,
+  transaction_dt timestamp,
+  score int
+  )
+ROW FORMAT SERDE
+  'org.apache.hadoop.hive.hbase.HBaseSerDe'
+STORED BY
+  'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES (
+  'hbase.columns.mapping'=':key,clt_details:ucl,clt_details:postcode,clt_details:transaction_dt,clt_details:score',
+  'serialization.format'='1')
+TBLPROPERTIES (
+  'hbase.table.name'='card_lookup_table'
+) ;
+
+set hbase.mapred.output.outputtable=card_lookup_table_hive;
+
+### CALCULATE and STORE UCL into HIVE - HBASE
+### Insert into the hive table and this will update the HBASE table   
+### First join to get the score details and second join to get the latest transaction_dt
+insert into table card_lookup_table_hive 
+select * from (
+SELECT t.card_id as card_id,cast(t.ucl as double) ucl,null postcode,lt.last_modified transaction_dt,ct.score score
+FROM
+  (SELECT card_id,
+          AVG(amount)+3 * STDDEV(amount) AS ucl
+   FROM
+     (SELECT *
+      FROM
+        (SELECT card_id,
+                transaction_dt,
+                amount,
+                rank() over (partition BY card_id
+                             ORDER BY transaction_dt) rn
+         FROM card_transactions_hive) dt
+      WHERE dt.rn<=10 ) dt1
+   GROUP BY card_id) t
+JOIN
+  (
+  SELECT c.card_id,
+          m.member_id,
+          m.score,
+          c.city
+   FROM card_member_hive c
+   JOIN member_score_hive m ON c.member_id=m.member_id
+   ) ct ON t.card_id = ct.card_id
+   
+ JOIN
+  (
+  select sub.card_id, from_unixtime(sub.last_modified,'yyyy-MM-dd HH:mm:ss') last_modified
+    from ( select card_id, transaction_dt,
+              max( unix_timestamp(transaction_dt)) over (partition by card_id) as last_modified 
+       from card_transactions_hive ) as sub
+    where   
+    unix_timestamp(sub.transaction_dt) = sub.last_modified
+  ) lt ON t.card_id = lt.card_id
+ ) t1;
+   
