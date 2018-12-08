@@ -1,0 +1,10 @@
+<coordinator-app xmlns = "uri:oozie:coordinator:0.2" name =
+   "member_score_trigger" frequency = "${coord:hours(4)}" start="2009-02-01T00:00Z" end="2029-02-02T00:00Z" timezone="UTC">
+   
+   <action>
+      <workflow>
+         <app-path>/usr/root/oozie_wf_2/workflow_member_score.xml</app-path>
+      </workflow>
+   </action>
+	
+</coordinator-app>
