@@ -8,28 +8,29 @@ STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' WITH SERDEPROPERTIE
 ("hbase.columns.mapping"=":key,card_transactions:card_transactions,card_id:card_id,member_id:member_id,amount:amount,postcode:postcode,pos_id:pos_id,transaction_dt:transaction_dt,status:status") TBLPROPERTIES ("hbase.table.name"="card_transactions");
 
 
---- sqoop command to load data from AWS RDS to HBASE
-sqoop import 
-    --connect jdbc:mysql://upgradawsrds.cpclxrkdvwmz.us-east-1.rds.amazonaws.com/cred_financials_data
-    --username upgraduser 
-	--password upgraduser
-    --table card_member 
-    --columns "card_id,member_id,member_joining_dt,card_purchase_dt,country,city" 
-    --hbase-table card_member 
-    --column-family card_member_detail 
-    --hbase-row-key card_id -m 1
+## Create member_score table in HBASE
+create 'card_member' ,'card_member_details'
+
+### sqoop command to load data from AWS RDS to HBASE
+sqoop import --connect jdbc:mysql://upgradawsrds.cpclxrkdvwmz.us-east-1.rds.amazonaws.com/cred_financials_data --username upgraduser --password upgraduser --table card_member --columns "card_id,member_id,member_joining_dt,card_purchase_dt,country,city" --hbase-table card_member --column-family card_member_details --hbase-row-key card_id -m 1 
+
+##--incremental lastmodified –-check-column card_purchase_dt
 	
-sqoop import 
-    --connect jdbc:mysql://upgradawsrds.cpclxrkdvwmz.us-east-1.rds.amazonaws.com/cred_financials_data
-    --username upgraduser
-	--password upgraduser
-    --table member_score 
-    --columns "member_id,score" 
-    --hbase-table member_score 
-    --column-family member_score_detail 
-    --hbase-row-key member_id -m 1
+### Create mapping table in HIVE 
+create external table card_member_hive(card_id string,member_id string,member_joining_dt timestamp,card_purchase_dt string,country string,city string)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' WITH SERDEPROPERTIES 
+("hbase.columns.mapping"=":key,card_member_details:member_id,card_member_details:member_joining_dt,card_member_details:card_purchase_dt,card_member_details:country,card_member_details:city") TBLPROPERTIES ("hbase.table.name"="card_member");
 	
 	
-	–incremental <mode>  
-	–check-column <column name>
-	–last value <last check column value>
+	
+### Create member_score table in HBASE
+create 'member_score' ,'member_score_detail'
+	
+### sqoop command to load data from AWS RDS to HBASE
+sqoop import --connect jdbc:mysql://upgradawsrds.cpclxrkdvwmz.us-east-1.rds.amazonaws.com/cred_financials_data --username upgraduser --password upgraduser --table member_score --columns "member_id,score" --hbase-table member_score --column-family member_score_detail --hbase-row-key member_id -m 1
+
+### Create mapping table in HIVE 
+create external table member_score_hive(member_id string, score int )
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' WITH SERDEPROPERTIES 
+("hbase.columns.mapping"=":key,member_score_detail:score") TBLPROPERTIES ("hbase.table.name"="member_score");
+
