@@ -1,7 +1,17 @@
 --Create the card_transactions table by typing
 
-create 'card_transactions' ,'card_id','member_id','amount','postcode','pos_id','transaction_dt','status'
+create 'card_transactions' ,'card_tran_det'
 
+hadoop fs -mkdir /tmp 
 hadoop dfs -copyFromLocal card_transactions.csv /tmp
 
-hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.separator=,  -Dimporttsv.columns="HBASE_ROW_KEY,card_transactions,card_id,member_id,amount,postcode,pos_id,transaction_dt,status" card_transactions /tmp/card_transactions.csv
+###Create HBASE Table
+
+hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.separator=,  -Dimporttsv.columns=HBASE_ROW_KEY,card_tran_det:member_id,card_tran_det:amount,card_tran_det:postcode,card_tran_det:pos_id,card_tran_det:transaction_dt,card_tran_det:status card_transactions /tmp/card_transactions.csv
+
+### Create mapping table in HIVE 
+
+create external table card_transactions_hive(card_id string,member_id string,amount string,postcode string,pos_id string,transaction_dt string,status string)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' WITH SERDEPROPERTIES 
+("hbase.columns.mapping"=":key,card_tran_det:member_id,card_tran_det:amount,card_tran_det:postcode,card_tran_det:pos_id,card_tran_det:transaction_dt,
+card_tran_det:status") TBLPROPERTIES ("hbase.table.name"="card_transactions");
