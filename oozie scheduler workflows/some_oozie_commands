@@ -1,0 +1,121 @@
+ export OOZIE_URL=http://ip-172-31-36-190.ec2.internal:11000/oozie 
+ 
+ su - hdfs 
+ hadoop fs -put /var/lib/oozie/mysql-connector-java.jar hdfs://ip-172-31-36-190.ec2.internal:8020/user/oozie/share/lib/lib_20181207205614/sqoop/lib/
+ 
+ hadoop fs -mkdir hdfs://ip-172-31-36-190.ec2.internal:8020/user/oozie/share/lib/lib_20181207205614/sqoop/lib/
+ 
+ hadoop fs -chown oozie hdfs://ip-172-31-36-190.ec2.internal:8020/user/oozie/share/lib/lib_20181207205614/sqoop/lib/mysql-connector-java.jar
+ hdfs dfs -put workflow.xml hdfs://ip-172-31-36-190.ec2.internal:8020/user/root/oozie_2/app/ 
+ hdfs dfs -put /etc/sqoop/conf/sqoop-site.xml hdfs://ip-172-31-36-190.ec2.internal:8020/user/root/oozie_2/app/ 
+ 
+ oozie job -oozie http://ip-172-31-36-190.ec2.internal:11000/oozie -config job.properties -run
+ oozie job -oozie http://ip-172-31-36-190.ec2.internal:11000/oozie -info 0000000-181207211752480-oozie-oozi-W 
+ oozie job -oozie http://ip-172-31-36-190.ec2.internal:11000/oozie -log 0000003-181207211752480-oozie-oozi-W
+ 0000001-181207211752480-oozie-oozi-W
+ 
+ <property>
+   <name>sqoop.metastore.client.autoconnect.url</name>
+   <value>jdbc:hsqldb:hsql://ip-172-31-36-190.ec2.internal:16000/sqoop</value>
+   <description>The connect string to use when connecting to a
+     job-management metastore. If unspecified, uses ~/.sqoop/.
+     You can specify a different path here.
+   </description>
+ </property>
+
+<property>
+   <name>sqoop.metastore.client.record.password</name>
+   <value>true</value>
+   <description>If true, allow saved passwords in the metastore.
+   </description>
+ </property>
+
+
+
+----------------------------------------------------------------------------------------------------
+
+Steps to run the sqoop jobs through Oozie
+Please follow below steps for running Sqoop Jobs through Oozie:
+
+Pre-requisite:
+
+1. Ensure you have added mysql-connector as demonstrated in Sqoop Workflow on CDH EC2 - https://learn.upgrad.com/v/course/78/session/15284/segment/77035
+
+2. Make changes to sqoop-script.xml placed at location: /etc/sqoop/conf/sqoop-site.xml
+
+Follow the thread for all the changes required: https://learn.upgrad.com/v/course/78/question/98939/answer/421054
+
+ 
+
+NOTE: Kindly follow each step without missing on any single detail.
+
+3. Once the Sqoop MetaStore server has connected using command : 
+
+sudo -u sqoop sqoop-metastore ,
+
+[root@ip-172-31-46-84 oozie_sqoop]# sudo -u sqoop sqoop-metastore
+
+On different putty instance , create your Sqoop job as follows:
+
+[root@ip-172-31-46-84 ~]# sqoop job --create inc_update_card_member --meta-connect jdbc:hsqldb:hsql://ip-172-31-46-84.ec2.internal:16000/sqoop -- import  <your sqoop command>
+
+To check if job is created successfully:
+
+
+[root@ip-172-31-46-84 ~]# sqoop job --list --meta-connect jdbc:hsqldb:hsql://ip-172-31-46-84.ec2.internal:16000/sqoop
+Warning: /opt/cloudera/parcels/CDH-5.15.0-1.cdh5.15.0.p0.21/bin/../lib/sqoop/../accumulo does not exist! Accumulo imports will fail.
+Please set $ACCUMULO_HOME to the root of your Accumulo installation.
+18/12/06 14:30:05 INFO sqoop.Sqoop: Running Sqoop version: 1.4.6-cdh5.15.0
+Available jobs:
+  inc_update_card_member
+
+ Execute the job once to see if it works without an issue:
+
+ [root@ip-172-31-46-84 ~]# sqoop job --exec inc_update_card_member --meta-connect jdbc:hsqldb:hsql://ip-172-31-46-84.ec2.internal:16000/sqoop
+
+Now running it through Oozie:
+
+
+ [root@ip-172-31-46-84 oozie_sqoop]# oozie job -oozie http://ip-172-31-46-84.ec2.internal:11000/oozie -config job.properties -run
+
+
+job: 0000002-181206125821179-oozie-oozi-W
+
+Checking the job status:
+[root@ip-172-31-46-84 oozie_sqoop]# oozie job -oozie http://ip-172-31-46-84.ec2.internal:11000/oozie -info 0000002-181206125821179-oozie-oozi-W
+Job ID : 0000002-181206125821179-oozie-oozi-W
+
+Reference job.properties file will look like:
+
+nameNode=hdfs://ip-172-31-46-84.ec2.internal:8020
+jobTracker=hdfs://ip-172-31-46-84.ec2.internal:8032
+oozie.use.system.libpath=True
+wfdir=${nameNode}/user/${user.name}/oozie_capstone
+oozie.wf.application.path=${wfdir}/app
+
+Reference workflow.xml will look like:
+
+<workflow-app name="capstone" xmlns="uri:oozie:workflow:0.4">
+<start to="card_member_import"/>
+<action name="card_member_import">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <job-xml>sqoop-site.xml </job-xml>
+    <configuration>
+        <property>
+            <name>fs.hdfs.impl.disable.cache</name>
+            <value>true</value>
+        </property>
+               <property>
+                       <name>mapred.job.queue.name</name>
+                       <value>default</value>
+               </property>
+    </configuration>
+    <command>job --exec inc_update_card_member --meta-connect jdbc:hsqldb:hsql://ip-172-31-46-84.ec2.internal:16000/sqoop</command>
+       </sqoop>
+        <ok to="finish"/>
+        <error to="finish"/>
+</action>
+<end name="finish"/>
+</workflow-app>

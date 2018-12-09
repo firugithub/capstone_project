@@ -1,0 +1,23 @@
+<workflow-app name="sqoop-sample-wf" xmlns="uri:oozie:workflow:0.5">
+    <start to="member_score_job"/>
+	<action name="hiveact">
+    <hive xmlns="uri:oozie:hive-action:0.2">
+        <job-tracker>${jobTracker}</job-tracker>
+        <name-node>${nameNode}</name-node>
+         <configuration>
+				<property>
+					<name>fs.hdfs.impl.disable.cache</name>
+					<value>true</value>
+				</property>
+               <property>
+                       <name>mapred.job.queue.name</name>
+                       <value>default</value>
+               </property>
+			 </configuration>
+        <script>calculate_insert_ucl_script.sql</script>
+    </hive>    
+    <ok to="finish"/>
+    <error to="kill"/>
+    </action>
+    <end name="finish"/>
+</workflow-app>
