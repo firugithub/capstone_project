@@ -1,6 +1,18 @@
-To schedule Hive job using Oozie, you need to write a Hive-action. Your Oozie job will consist of mainly three things.
 
-workflow.xml
-job.properties
-Hive script
---https://acadgild.com/blog/oozie-job-scheduling-in-hive
+###Submitting the Sqoop job
+
+[root@ip-172-31-36-190 ~]# sqoop job --exec card_member_sqoop_job --meta-connect jdbc:hsqldb:hsql://ip-172-31-46-84.ec2.internal:16000/sqoop
+
+[root@ip-172-31-36-190 ~]# sqoop job --exec member_score_sqoop_job --meta-connect jdbc:hsqldb:hsql://ip-172-31-46-84.ec2.internal:16000/sqoop
+ 
+ 
+
+
+
+###Submitting the cordinator / workflow
+
+[root@ip-172-31-36-190 oozie_wf_1_card_member]# oozie job -oozie http://ip-172-31-36-190.ec2.internal:11000/oozie -config job.properties -submit
+
+[root@ip-172-31-36-190 oozie_wf_1_member_score]# oozie job -oozie http://ip-172-31-36-190.ec2.internal:11000/oozie -config job.properties -submit
+
+[root@ip-172-31-36-190 oozie_wf_1_ucl]# oozie job -oozie http://ip-172-31-36-190.ec2.internal:11000/oozie -config job.properties -submit

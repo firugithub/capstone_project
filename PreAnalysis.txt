@@ -1,5 +1,8 @@
-Script to calculate the moving average and standard deviation of the last 10 transactions for each card_id for the data present in Hadoop and NoSQL database. If the total number of transactions for a particular card_id is less than 10, then calculate the parameters based on the total number of records available for that card_id. The script should be able to extract and feed the other relevant data (‘postcode’, ‘transaction_dt’, ‘score’, etc.) for the look-up table along with card_id and UCL. (PreAnalysis.txt)
+Steps 
 
+1. Created look up table named 'card_lookup_table_hive' which is pointing to HBASE
+2. Find the UCL , score using below queries and insert into hive table ,which will update to HBASE as well.
+3. This hive query , we will schedule it in the OOZIE scheduler job. 
 
 
 ### CREATE LOOKUP TABLE in hive which implisit pointing to HBASE 
@@ -26,7 +29,7 @@ set hbase.mapred.output.outputtable=card_lookup_table_hive;
 ### CALCULATE and STORE UCL into HIVE - HBASE
 ### Insert into the hive table and this will update the HBASE table   
 ### First join to get the score details and second join to get the latest transaction_dt
-insert into table card_lookup_table_hive 
+INSERT into table card_lookup_table_hive 
 select * from (
 SELECT t.card_id as card_id,cast(t.ucl as double) ucl,null postcode,lt.last_modified transaction_dt,ct.score score
 FROM
