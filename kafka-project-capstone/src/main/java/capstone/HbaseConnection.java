@@ -20,8 +20,8 @@ public class HbaseConnection implements Serializable {
         (org.apache.hadoop.conf.Configuration) HBaseConfiguration.create();
 
     conf.setInt("timeout", 1200000);
-    conf.set("hbase.master", "ec2-52-90-17-104.compute-1.amazonaws.com:60000");
-    conf.set("hbase.zookeeper.quorum", "ec2-52-90-17-104.compute-1.amazonaws.com");
+    conf.set("hbase.master", "ec2-54-145-245-82.compute-1.amazonaws.com:60000");
+    conf.set("hbase.zookeeper.quorum", "ec2-54-145-245-82.compute-1.amazonaws.com");
     conf.set("hbase.zookeeper.property.clientPort", "2181");
     conf.set("zookeeper.znode.parent", "/hbase");
 
